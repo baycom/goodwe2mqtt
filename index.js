@@ -167,6 +167,9 @@ const getETSN = async (address) => {
 			console.log(GWSerialNumber);
 		}
 	} catch (e) {
+		if(options.debug) {
+			console.log(e);
+		}
 		return null;
 	}
 }
@@ -216,6 +219,9 @@ const getDTSN = async (address) => {
 			console.log(GWSerialNumber);
 		}
 	} catch (e) {
+		if(options.debug) {
+			console.log(e);
+		}
 		return null;
 	}
 }
@@ -230,6 +236,9 @@ const getETRegisters = async (address) => {
 		}
 		sendMqtt(GWSerialNumber[address], gwState);
 	} catch (e) {
+		if(options.debug) {
+			console.log(e);
+		}
 		return null;
 	}
 }
@@ -244,6 +253,9 @@ const getDTRegisters = async (address) => {
 		}
 		sendMqtt(GWSerialNumber[address], gwState);
 	} catch (e) {
+		if(options.debug) {
+			console.log(e);
+		}
 		return null;
 	}
 }
@@ -265,6 +277,7 @@ const getMetersValue = async (meters) => {
 	                	await getETSN(meter);
 			}
                 }
+                await sleep(100);
                 if(GWSerialNumber[meter]) {
                 	if(options.type[pos] == 'DT') {
                 		await getDTRegisters(meter);
