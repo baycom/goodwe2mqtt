@@ -23,12 +23,18 @@ var modbusClient = new ModbusRTU();
 modbusClient.setTimeout(1000);
 
 if(options.inverterhost) {
-	modbusClient.connectTCP(options.inverterhost, { port: 502 }).catch((error) => {
+	modbusClient.connectTcpRTUBuffered(options.inverterhost, { port: 502 }).then(val => {
+		// start get value
+		getMetersValue(options.address);
+	}).catch((error) => {
 		console.error(error);
 		process.exit(-1);
 	});
 } else if(options.inverterport) {
-	modbusClient.connectRTUBuffered(options.inverterport, { baudRate: 9600, parity: 'none' }).catch((error) => {
+	modbusClient.connectRTUBuffered(options.inverterport, { baudRate: 9600, parity: 'none' }).then((val)=>{
+		// start get value
+		getMetersValue(options.address);
+	}).catch((error) => {
 		console.error(error);
 		process.exit(-1);
 	});
@@ -92,9 +98,9 @@ const ETPayloadParser = new Parser()
 	.int32be('OnGridL3Power')
 	.int16be('GridMode')
 	.int32be('TotalInverterPower')
-	.seek((0x8944-0x8943)*2)
-	.int16be('ActivePower')
-	.seek((0x8949-0x8945)*2)
+	.int32be('ActivePower')
+	.int32be('ReactivePower')
+	.int32be('ApparentPower')
 	.uint16be('BackupL1Voltage', { formatter: (x) => {return x/10.0;}})
 	.uint16be('BackupL1Current', { formatter: (x) => {return x/10.0;}})
 	.uint16be('BackupL1Frequency', { formatter: (x) => {return x/100.0;}})
@@ -153,12 +159,8 @@ const ETPayloadParser = new Parser()
 	.uint32be('DiagStatusH')
 	.uint32be('DiagStatusL')
 	;
-function getETPayload(data) {
-	return ETPayloadParser.parse(data);
-}
 
-
-const getETSN = async (address) => {
+async function getETSN(address) {
 	try {
 		modbusClient.setID(address);
 		let vals = await modbusClient.readHoldingRegisters(0x88BB, 8);
@@ -206,9 +208,6 @@ const DTPayloadParser = new Parser()
 	.uint16be('SafetyCountry')
 	.uint16be('EDay', { formatter: (x) => {return x/10.0;}})
 	;
-function getDTPayload(data) {
-	return DTPayloadParser.parse(data);
-}
 
 const getDTSN = async (address) => {
 	try {
@@ -230,7 +229,7 @@ const getETRegisters = async (address) => {
 	try {
 		modbusClient.setID(address);
                 let vals = await modbusClient.readHoldingRegisters(0x891C, 123);	
-		var gwState = getETPayload(vals.buffer);
+		var gwState = ETPayloadParser.parse(vals.buffer);
 		if(options.debug) {
 			console.log(util.inspect(gwState));
 		}
@@ -247,7 +246,7 @@ const getDTRegisters = async (address) => {
 	try {
 		modbusClient.setID(address);
                 let vals = await modbusClient.readHoldingRegisters(0x300, 0x21);
-		var gwState = getDTPayload(vals.buffer);
+		var gwState = DTPayloadParser.parse(vals.buffer);
 		if(options.debug) {
 			console.log(util.inspect(gwState));
 		}
@@ -262,11 +261,11 @@ const getDTRegisters = async (address) => {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const getMetersValue = async (meters) => {
+async function getMetersValue () {
     try{
         var pos=0;
         // get value of all meters
-        for(let meter of meters) {
+        for(let meter of options.address) {
                 if(options.debug) {
                         console.log("query: " + meter + " type: " + options.type[pos]);
                 }
@@ -299,6 +298,4 @@ const getMetersValue = async (meters) => {
     }
 }
 
-// start get value
-getMetersValue(options.address);
 
