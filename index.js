@@ -293,7 +293,7 @@ async function getMetersValue () {
     } finally {
         // after get all data from salve repeate it again
         setImmediate(() => {
-            getMetersValue(meters);
+            getMetersValue();
         })
     }
 }
