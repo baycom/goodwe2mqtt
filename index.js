@@ -69,7 +69,7 @@ function sendMqtt(id, data) {
         MQTTclient.publish('GoodWe/' + id, JSON.stringify(data));        
 }
 
-const ETPayloadParser = new Parser()
+const ETPayloadParser_891c = new Parser()
 	.seek((0x891F-0x891C)*2)
 	.uint16be('PV1Voltage', { formatter: (x) => {return x/10.0;}})
 	.uint16be('PV1Current', { formatter: (x) => {return x/10.0;}})
@@ -160,6 +160,34 @@ const ETPayloadParser = new Parser()
 	.uint32be('DiagStatusL')
 	;
 
+const ETPayloadParser_9088 = new Parser()
+	.uint16be('DRMStatus')
+	.uint16be('BattTypeIndex')
+	.uint16be('BMSStatus')
+	.uint16be('BMSPackTemperature', { formatter: (x) => {return x/10.0;}})
+	.uint16be('BMSChargeImax')
+	.uint16be('BMSDischargeImax')
+	.uint16be('BMSErrorCodeL')
+	.uint16be('SOC')
+	.uint16be('BMSSOH')
+	.uint16be('BMSBatteryStrings')
+	.uint16be('BMSWarningCodeL')
+	.uint16be('BatteryProtocol')
+	.uint16be('BMSErrorCodeH')
+	.uint16be('BMSWarningCodeH')
+	.uint16be('BMSSoftwareVersion')
+	.uint16be('BatteryHardwareVersion')
+	.uint16be('MaximumCellTemperatureID')
+	.uint16be('MinimumCellTemperatureID')
+	.uint16be('MaximumCellVoltageID')
+	.uint16be('MinimumCellVoltageID')
+	.uint16be('MaximumCellTemperature', { formatter: (x) => {return x/10.0;}})
+	.uint16be('MinimumCellTemperature', { formatter: (x) => {return x/10.0;}})
+	.uint16be('MaximumCellVoltage', { formatter: (x) => {return x/1000.0;}})
+	.uint16be('MinimumCellVoltage', { formatter: (x) => {return x/1000.0;}})
+	;
+
+
 async function getETSN(address) {
 	try {
 		modbusClient.setID(address);
@@ -229,7 +257,11 @@ const getETRegisters = async (address) => {
 	try {
 		modbusClient.setID(address);
                 let vals = await modbusClient.readHoldingRegisters(0x891C, 123);	
-		var gwState = ETPayloadParser.parse(vals.buffer);
+		var gwState_891c = ETPayloadParser_891c.parse(vals.buffer);
+                vals = await modbusClient.readHoldingRegisters(0x9088, 48);
+		var gwState_9088 = ETPayloadParser_9088.parse(vals.buffer);
+		var gwState = {};
+		Object.assign(gwState, gwState_891c, gwState_9088);
 		if(options.debug) {
 			console.log(util.inspect(gwState));
 		}
