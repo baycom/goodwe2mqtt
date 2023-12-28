@@ -187,6 +187,25 @@ const ETPayloadParser_9088 = new Parser()
 	.uint16be('MinimumCellVoltage', { formatter: (x) => {return x/1000.0;}})
 	;
 
+const ETPayloadParser_8ca0 = new Parser()
+	.uint16be('COMMode')
+	.uint16be('RSSI')
+	.uint16be('ManufacturerCode')
+	.uint16be('bMeterConnectStatus')
+	.uint16be('MeterCommunicationStatus')
+	.int16be('MTActivePowerL1')
+	.int16be('MTActivePowerL2')
+	.int16be('MTActivePowerL3')
+	.int16be('MTTotalActivePower')
+	.int16be('MTTotalReactivePower')
+	.int16be('MeterPFL1', { formatter: (x) => {return x/100.0;}})
+	.int16be('MeterPFL2', { formatter: (x) => {return x/100.0;}})
+	.int16be('MeterPFL3', { formatter: (x) => {return x/100.0;}})
+	.int16be('MeterPowerFactor', { formatter: (x) => {return x/100.0;}})
+	.uint16be('MeterFrequency', { formatter: (x) => {return x/100.0;}})
+	.floatbe('MeterETotalSell', { formatter: (x) => {return x/10.0;}})
+	.floatbe('MeterETotalBuy', { formatter: (x) => {return x/10.0;}})
+	;
 
 async function getETSN(address) {
 	try {
@@ -260,8 +279,10 @@ const getETRegisters = async (address) => {
 		var gwState_891c = ETPayloadParser_891c.parse(vals.buffer);
                 vals = await modbusClient.readHoldingRegisters(0x9088, 48);
 		var gwState_9088 = ETPayloadParser_9088.parse(vals.buffer);
+                vals = await modbusClient.readHoldingRegisters(0x8ca0, 38);
+		var gwState_8ca0 = ETPayloadParser_8ca0.parse(vals.buffer);
 		var gwState = {};
-		Object.assign(gwState, gwState_891c, gwState_9088);
+		Object.assign(gwState, gwState_891c, gwState_8ca0, gwState_9088);
 		if(options.debug) {
 			console.log(util.inspect(gwState));
 		}
