@@ -203,8 +203,8 @@ const ETPayloadParser_8ca0 = new Parser()
 	.int16be('MeterPFL3', { formatter: (x) => {return x/100.0;}})
 	.int16be('MeterPowerFactor', { formatter: (x) => {return x/100.0;}})
 	.uint16be('MeterFrequency', { formatter: (x) => {return x/100.0;}})
-	.floatbe('MeterETotalSell', { formatter: (x) => {return x/10.0;}})
-	.floatbe('MeterETotalBuy', { formatter: (x) => {return x/10.0;}})
+	.floatbe('MeterETotalSell')
+	.floatbe('MeterETotalBuy')
 	;
 
 async function getETSN(address) {
