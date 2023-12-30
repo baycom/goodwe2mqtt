@@ -300,6 +300,8 @@ const getDTRegisters = async (address) => {
 		modbusClient.setID(address);
 		let vals = await modbusClient.readHoldingRegisters(0x300, 0x21);
 		var gwState = DTPayloadParser.parse(vals.buffer);
+		gwState.PV1Power = parseInt(gwState.PV1Voltage * gwState.PV1Current);
+		gwState.PV2Power = parseInt(gwState.PV2Voltage * gwState.PV2Current);
 		if (options.debug) {
 			console.log(util.inspect(gwState));
 		}
