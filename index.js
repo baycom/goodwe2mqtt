@@ -66,7 +66,7 @@ function sendMqtt(id, data) {
 	if (options.debug) {
 		console.log("publish: " + 'GoodWe/' + id, JSON.stringify(data));
 	}
-	MQTTclient.publish('GoodWe/' + id, JSON.stringify(data));
+	MQTTclient.publish('GoodWe/' + id, JSON.stringify(data), { retain: true });
 }
 
 const ETPayloadParser_891c = new Parser()
