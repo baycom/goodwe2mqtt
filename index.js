@@ -1,12 +1,13 @@
-var util = require('util');
-var mqtt = require('mqtt');
-var ModbusRTU = require("modbus-serial");
-var Parser = require('binary-parser').Parser;
+const util = require('util');
+const Mutex = require('async-mutex').Mutex;
+const mqtt = require('mqtt');
+const ModbusRTU = require("modbus-serial");
+const Parser = require('binary-parser').Parser;
 const commandLineArgs = require('command-line-args')
 
 const optionDefinitions = [
 	{ name: 'mqtthost', alias: 'm', type: String, defaultValue: "localhost" },
-	{ name: 'mqttclientid', alias: 'c', type: String, defaultValue: "goodwe1Client" },
+	{ name: 'mqttclientid', alias: 'c', type: String, defaultValue: "gwClient" },
 	{ name: 'inverterhost', alias: 'i', type: String },
 	{ name: 'inverterport', alias: 'p', type: String },
 	{ name: 'type', alias: 't', type: String, multiple: true, defaultValue: ['ET'] },
@@ -19,13 +20,14 @@ const options = commandLineArgs(optionDefinitions)
 
 var GWSerialNumber = [];
 var modbusClient = new ModbusRTU();
+var mutex = new Mutex();
 
 modbusClient.setTimeout(1000);
 
 if (options.inverterhost) {
 	modbusClient.connectTcpRTUBuffered(options.inverterhost, { port: 502 }).then(val => {
 		// start get value
-		getMetersValue(options.address);
+		getStatus();
 	}).catch((error) => {
 		console.error(error);
 		process.exit(-1);
@@ -33,7 +35,7 @@ if (options.inverterhost) {
 } else if (options.inverterport) {
 	modbusClient.connectRTUBuffered(options.inverterport, { baudRate: 9600, parity: 'none' }).then((val) => {
 		// start get value
-		getMetersValue(options.address);
+		getStatus();
 	}).catch((error) => {
 		console.error(error);
 		process.exit(-1);
@@ -55,6 +57,7 @@ if (options.inverterhost) {
 var MQTTclient = mqtt.connect("mqtt://" + options.mqtthost, { clientId: options.mqttclientid });
 MQTTclient.on("connect", function () {
 	console.log("MQTT connected");
+	MQTTclient.subscribe("GoodWe/+/set/+");
 })
 
 MQTTclient.on("error", function (error) {
@@ -62,12 +65,89 @@ MQTTclient.on("error", function (error) {
 	process.exit(1)
 });
 
-function sendMqtt(id, data) {
+function sendMqtt(address, data) {
 	if (options.debug) {
-		console.log("publish: " + 'GoodWe/' + id, JSON.stringify(data));
+		console.log("publish: " + 'GoodWe/' + address, JSON.stringify(data));
 	}
-	MQTTclient.publish('GoodWe/' + id, JSON.stringify(data), { retain: true });
+	MQTTclient.publish('GoodWe/' + address, JSON.stringify(data), { retain: true });
 }
+
+function findModbusAddr(serial) {
+	var pos = 0;
+	for (let address of options.address) {
+		if (options.debug) {
+			console.log("query: " + address + " type: " + options.type[pos]);
+		}
+		if (options.type[pos] == 'ET' && GWSerialNumber[address] == serial) {
+			if (options.debug) {
+				console.log("found modbus address: ", address);
+			}
+			return address;
+		}
+		pos++;
+	}
+	if (options.debug) {
+		console.log("modbus address not found for serial:", serial);
+	}
+	return -1;
+}
+
+async function modbusWrite(serial, func, start, regs) {
+	var addr = findModbusAddr(serial);
+	if (addr > 0) {
+		return await mutex.runExclusive(async () => {
+			try {
+				modbusClient.setID(addr);
+				var ret = await modbusClient.writeRegisters(start, regs);
+				console.log("modbusWrite done: ", ret);
+				if (ret.length == regs.length) {
+					MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "ok");
+				} else {
+					MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "failed");
+				}
+				return ret;
+			} catch (e) {
+				MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "failed: " + e.message);
+			}
+		});
+	}
+	MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "failed: no address found");
+	return -1;
+}
+
+MQTTclient.on('message', function (topic, message, packet) {
+	if (options.debug) {
+		console.log("MQTT message for topic ", topic, " received: ", message);
+	}
+	if (topic.includes("GoodWe/")) {
+		let sub = topic.split('/');
+		let serial = sub[1];
+		let set = sub[2];
+		let func = sub[3];
+		let value = parseInt(message);
+		if (func === 'socminongrid') {
+			var register = 45356;
+			var array = [value];
+			modbusWrite(serial, func, register, array);
+		} else if (func === 'socminoffgrid') {
+			var register = 45358;
+			var array = [value];
+			modbusWrite(serial, func, register, array);
+		} else if (func === 'chargeforcegrid') {
+			var register = 47545;
+			var array = [value];
+			modbusWrite(serial, func, register, array);
+		} else if (func === 'chargeforcesoc') {
+			var register = 47546;
+			var array = [value];
+			modbusWrite(serial, func, register, array);
+		} else if (func === 'chargeforcepower') {
+			var register = 47603;
+			var array = [value];
+			modbusWrite(serial, func, register, array);
+		}
+	}
+});
 
 const ETPayloadParser_891c = new Parser()
 	.seek((0x891F - 0x891C) * 2)
@@ -164,20 +244,20 @@ const ETPayloadParser_8ca0 = new Parser()
 	.uint16be('COMMode')
 	.uint16be('RSSI')
 	.uint16be('ManufacturerCode')
-	.uint16be('bMeterConnectStatus')
-	.uint16be('MeterCommunicationStatus')
+	.uint16be('baddressConnectStatus')
+	.uint16be('addressCommunicationStatus')
 	.int16be('MTActivePowerL1')
 	.int16be('MTActivePowerL2')
 	.int16be('MTActivePowerL3')
 	.int16be('MTTotalActivePower')
 	.int16be('MTTotalReactivePower')
-	.int16be('MeterPFL1', { formatter: (x) => { return x / 100.0; } })
-	.int16be('MeterPFL2', { formatter: (x) => { return x / 100.0; } })
-	.int16be('MeterPFL3', { formatter: (x) => { return x / 100.0; } })
-	.int16be('MeterPowerFactor', { formatter: (x) => { return x / 100.0; } })
-	.uint16be('MeterFrequency', { formatter: (x) => { return x / 100.0; } })
-	.floatbe('MeterETotalSell')
-	.floatbe('MeterETotalBuy')
+	.int16be('addressPFL1', { formatter: (x) => { return x / 100.0; } })
+	.int16be('addressPFL2', { formatter: (x) => { return x / 100.0; } })
+	.int16be('addressPFL3', { formatter: (x) => { return x / 100.0; } })
+	.int16be('addressPowerFactor', { formatter: (x) => { return x / 100.0; } })
+	.uint16be('addressFrequency', { formatter: (x) => { return x / 100.0; } })
+	.floatbe('addressETotalSell')
+	.floatbe('addressETotalBuy')
 	;
 
 const ETPayloadParser_9088 = new Parser()
@@ -316,29 +396,33 @@ const getDTRegisters = async (address) => {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function getMetersValue() {
+async function getStatus() {
 	try {
 		var pos = 0;
-		// get value of all meters
-		for (let meter of options.address) {
+		// get value of all addresss
+		for (let address of options.address) {
 			if (options.debug) {
-				console.log("query: " + meter + " type: " + options.type[pos]);
+				console.log("query: " + address + " type: " + options.type[pos]);
 			}
-			if (!GWSerialNumber[meter]) {
-				if (options.type[pos] == 'DT') {
-					await getDTSN(meter);
-				} else {
-					await getETSN(meter);
+			mutex.runExclusive(async () => {
+				if (!GWSerialNumber[address]) {
+					if (options.type[pos] == 'DT') {
+						await getDTSN(address);
+					} else {
+						await getETSN(address);
+					}
 				}
-			}
+			});
 			await sleep(100);
-			if (GWSerialNumber[meter]) {
-				if (options.type[pos] == 'DT') {
-					await getDTRegisters(meter);
-				} else {
-					await getETRegisters(meter);
+			mutex.runExclusive(async () => {
+				if (GWSerialNumber[address]) {
+					if (options.type[pos] == 'DT') {
+						await getDTRegisters(address);
+					} else {
+						await getETRegisters(address);
+					}
 				}
-			}
+			});
 			pos++;
 		}
 		await sleep(options.wait);
@@ -348,7 +432,7 @@ async function getMetersValue() {
 	} finally {
 		// after get all data from salve repeate it again
 		setImmediate(() => {
-			getMetersValue();
+			getStatus();
 		})
 	}
 }
