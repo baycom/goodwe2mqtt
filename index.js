@@ -99,7 +99,6 @@ async function modbusWrite(serial, func, start, regs) {
 			try {
 				modbusClient.setID(addr);
 				var ret = await modbusClient.writeRegisters(start, regs);
-				console.log("modbusWrite done: ", ret);
 				if (ret.length == regs.length) {
 					MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "ok");
 				} else {
