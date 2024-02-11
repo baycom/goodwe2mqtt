@@ -57,7 +57,7 @@ if (options.inverterhost) {
 var MQTTclient = mqtt.connect("mqtt://" + options.mqtthost, { clientId: options.mqttclientid });
 MQTTclient.on("connect", function () {
 	console.log("MQTT connected");
-	MQTTclient.subscribe("GoodWe/+/set/+");
+	MQTTclient.subscribe("GoodWe/+/+/set");
 })
 
 MQTTclient.on("error", function (error) {
@@ -100,17 +100,17 @@ async function modbusWrite(serial, func, start, regs) {
 				modbusClient.setID(addr);
 				var ret = await modbusClient.writeRegisters(start, regs);
 				if (ret.length == regs.length) {
-					MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "ok");
+					MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", "ok");
 				} else {
-					MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "failed");
+					MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", "failed");
 				}
 				return ret;
 			} catch (e) {
-				MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "failed: " + e.message);
+				MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", "failed: " + e.message);
 			}
 		});
 	}
-	MQTTclient.publish('GoodWe/' + serial + "/result/" + func, "failed: no address found");
+	MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", "failed: no address found");
 	return -1;
 }
 
@@ -121,8 +121,7 @@ MQTTclient.on('message', function (topic, message, packet) {
 	if (topic.includes("GoodWe/")) {
 		let sub = topic.split('/');
 		let serial = sub[1];
-		let set = sub[2];
-		let func = sub[3];
+		let func = sub[2];
 		let value = parseInt(message);
 		if (func === 'socminongrid') {
 			var register = 45356;
