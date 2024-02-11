@@ -1,5 +1,5 @@
 {
-  "name": "goodwebms",
+  "name": "goodwe2mqtt",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,9 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "async-mutex": "^0.4.1",
     "binary-parser": "^2.0.2",
     "command-line-args": "^5.2.1",
-    "influx": "^5.9.3",
     "modbus-serial": "^8.0.5",
     "mqtt": "^4.3.7"
   }
