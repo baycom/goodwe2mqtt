@@ -285,13 +285,15 @@ async function getETSN(address) {
 	try {
 		modbusClient.setID(address);
 		let vals = await modbusClient.readHoldingRegisters(0x88BB, 8);
-		GWSerialNumber[address] = new String(vals.buffer);
+		var SNStr = new String(vals.buffer);
+		GWSerialNumber[address] = SNStr 
 		if (options.debug) {
-			console.log(GWSerialNumber);
+			console.log(SNStr);
 		}
+		return SNStr;
 	} catch (e) {
 		if (options.debug) {
-			console.log(e);
+			console.log("getETSN: " + e);
 		}
 		return null;
 	}
@@ -308,13 +310,14 @@ const getETRegisters = async (address) => {
 		var gwState_8ca0 = ETPayloadParser_8ca0.parse(vals.buffer);
 		var gwState = {};
 		Object.assign(gwState, gwState_891c, gwState_8ca0, gwState_9088);
+		await sendMqtt(GWSerialNumber[address], gwState);
 		if (options.debug) {
 			console.log(util.inspect(gwState));
 		}
-		sendMqtt(GWSerialNumber[address], gwState);
+		return gwState;
 	} catch (e) {
 		if (options.debug) {
-			console.log(e);
+			console.log("getETRegisters: " + e);
 		}
 		return null;
 	}
@@ -353,36 +356,39 @@ const DTPayloadParser = new Parser()
 	.uint16be('EDay', { formatter: (x) => { return x / 10.0; } })
 	;
 
-const getDTSN = async (address) => {
+async function getDTSN (address) {
 	try {
 		modbusClient.setID(address);
 		let vals = await modbusClient.readHoldingRegisters(0x200, 8);
-		GWSerialNumber[address] = new String(vals.buffer);
+		var SNStr = new String(vals.buffer);
+		GWSerialNumber[address] = SNStr;
 		if (options.debug) {
-			console.log(GWSerialNumber);
+			console.log(SNStr);
 		}
+		return SNStr;
 	} catch (e) {
 		if (options.debug) {
-			console.log(e);
+			console.log("getDTSN: " + e);
 		}
 		return null;
 	}
 }
 
-const getDTRegisters = async (address) => {
+async function getDTRegisters (address) {
 	try {
 		modbusClient.setID(address);
 		let vals = await modbusClient.readHoldingRegisters(0x300, 0x21);
 		var gwState = DTPayloadParser.parse(vals.buffer);
 		gwState.PV1Power = parseInt(gwState.PV1Voltage * gwState.PV1Current);
 		gwState.PV2Power = parseInt(gwState.PV2Voltage * gwState.PV2Current);
+		await sendMqtt(GWSerialNumber[address], gwState);
 		if (options.debug) {
 			console.log(util.inspect(gwState));
 		}
-		sendMqtt(GWSerialNumber[address], gwState);
+		return gwState;
 	} catch (e) {
 		if (options.debug) {
-			console.log(e);
+			console.log("getDTRegisters: " + e);
 		}
 		return null;
 	}
@@ -399,7 +405,7 @@ async function getStatus() {
 			if (options.debug) {
 				console.log("query: " + address + " type: " + type);
 			}
-			mutex.runExclusive(async () => {
+			await mutex.runExclusive(async () => {
 				if (!GWSerialNumber[address]) {
 					if (type == 'DT') {
 						await getDTSN(address);
@@ -409,7 +415,7 @@ async function getStatus() {
 				}
 			});
 			await sleep(100);
-			mutex.runExclusive(async () => {
+			await mutex.runExclusive(async () => {
 				if (GWSerialNumber[address]) {
 					if (type == 'DT') {
 						await getDTRegisters(address);
