@@ -395,12 +395,13 @@ async function getStatus() {
 		var pos = 0;
 		// get value of all addresss
 		for (let address of options.address) {
+			let type = options.type[pos];
 			if (options.debug) {
-				console.log("query: " + address + " type: " + options.type[pos]);
+				console.log("query: " + address + " type: " + type);
 			}
 			mutex.runExclusive(async () => {
 				if (!GWSerialNumber[address]) {
-					if (options.type[pos] == 'DT') {
+					if (type == 'DT') {
 						await getDTSN(address);
 					} else {
 						await getETSN(address);
@@ -410,7 +411,7 @@ async function getStatus() {
 			await sleep(100);
 			mutex.runExclusive(async () => {
 				if (GWSerialNumber[address]) {
-					if (options.type[pos] == 'DT') {
+					if (type == 'DT') {
 						await getDTRegisters(address);
 					} else {
 						await getETRegisters(address);
