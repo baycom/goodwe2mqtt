@@ -92,17 +92,19 @@ function findModbusAddr(serial) {
 	return -1;
 }
 
-async function modbusWrite(serial, func, start, regs) {
+async function modbusWrite(serial, func, reg, value, query = 0) {
 	var addr = findModbusAddr(serial);
 	if (addr > 0) {
 		return await mutex.runExclusive(async () => {
 			try {
 				modbusClient.setID(addr);
-				var ret = await modbusClient.writeRegisters(start, regs);
-				if (ret.length == regs.length) {
-					MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", "ok");
+				var ret;
+				if (!query) {
+					await modbusClient.writeRegister(reg, value);
+					MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", value.toString());
 				} else {
-					MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", "failed");
+					ret = await modbusClient.readHoldingRegisters(reg, 1);
+					MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", ret.buffer.readUInt16BE(0).toString());
 				}
 				return ret;
 			} catch (e) {
@@ -122,26 +124,21 @@ MQTTclient.on('message', function (topic, message, packet) {
 		let serial = sub[1];
 		let func = sub[2];
 		let value = parseInt(message);
+		let query = message.length==0
+		let register = -1;
 		if (func === 'socminongrid') {
-			var register = 45356;
-			var array = [value];
-			modbusWrite(serial, func, register, array);
+			register = 45356;
 		} else if (func === 'socminoffgrid') {
-			var register = 45358;
-			var array = [value];
-			modbusWrite(serial, func, register, array);
+			register = 45358;
 		} else if (func === 'chargeforcegrid') {
-			var register = 47545;
-			var array = [value];
-			modbusWrite(serial, func, register, array);
+			register = 47545;
 		} else if (func === 'chargeforcesoc') {
-			var register = 47546;
-			var array = [value];
-			modbusWrite(serial, func, register, array);
+			register = 47546;
 		} else if (func === 'chargeforcepower') {
-			var register = 47603;
-			var array = [value];
-			modbusWrite(serial, func, register, array);
+			register = 47603;
+		}
+		if(register != -1) {
+			modbusWrite(serial, func, register, value, query);
 		}
 	}
 });
