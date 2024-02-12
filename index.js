@@ -110,7 +110,6 @@ async function modbusWrite(serial, func, start, regs) {
 			}
 		});
 	}
-	MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", "failed: no address found");
 	return -1;
 }
 
