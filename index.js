@@ -29,7 +29,7 @@ if (options.inverterhost) {
 		// start get value
 		getStatus();
 	}).catch((error) => {
-		console.error(error);
+		console.error("connectTcpRTUBuffered: " + error.message);
 		process.exit(-1);
 	});
 } else if (options.inverterport) {
@@ -37,7 +37,7 @@ if (options.inverterhost) {
 		// start get value
 		getStatus();
 	}).catch((error) => {
-		console.error(error);
+		console.error("connectRTUBuffered: " + error.message);
 		process.exit(-1);
 	});
 }
@@ -109,6 +109,7 @@ async function modbusWrite(serial, func, reg, value, query = 0) {
 				return ret;
 			} catch (e) {
 				MQTTclient.publish('GoodWe/' + serial + "/" + func + "/result", "failed: " + e.message);
+				console.error("modbusWrite: " + e.message);
 			}
 		});
 	}
@@ -293,7 +294,7 @@ async function getETSN(address) {
 		return SNStr;
 	} catch (e) {
 		if (options.debug) {
-			console.log("getETSN: " + e);
+			console.error("getETSN: " + e.message);
 		}
 		return null;
 	}
@@ -317,7 +318,7 @@ const getETRegisters = async (address) => {
 		return gwState;
 	} catch (e) {
 		if (options.debug) {
-			console.log("getETRegisters: " + e);
+			console.error("getETRegisters: " + e.message);
 		}
 		return null;
 	}
@@ -368,7 +369,7 @@ async function getDTSN (address) {
 		return SNStr;
 	} catch (e) {
 		if (options.debug) {
-			console.log("getDTSN: " + e);
+			console.error("getDTSN: " + e.message);
 		}
 		return null;
 	}
@@ -388,7 +389,7 @@ async function getDTRegisters (address) {
 		return gwState;
 	} catch (e) {
 		if (options.debug) {
-			console.log("getDTRegisters: " + e);
+			console.error("getDTRegisters: " + e.message);
 		}
 		return null;
 	}
@@ -429,7 +430,7 @@ async function getStatus() {
 		await sleep(options.wait);
 	} catch (e) {
 		// if error, handle them here (it should not)
-		console.log(e)
+		console.error("getStatus: " + e.message)
 	} finally {
 		// after get all data from salve repeate it again
 		setImmediate(() => {
