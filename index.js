@@ -5,6 +5,8 @@ const ModbusRTU = require("modbus-serial");
 const Parser = require('binary-parser').Parser;
 const commandLineArgs = require('command-line-args')
 
+const networkErrors = ["ESOCKETTIMEDOUT", "ETIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EHOSTUNREACH"];
+
 const optionDefinitions = [
 	{ name: 'mqtthost', alias: 'm', type: String, defaultValue: "localhost" },
 	{ name: 'mqttclientid', alias: 'c', type: String, defaultValue: "gwClient" },
@@ -296,6 +298,11 @@ async function getETSN(address) {
 		if (options.debug) {
 			console.error("getETSN: " + e.message);
 		}
+		if(e.errno) {
+            if(networkErrors.includes(e.errno)) {
+                process.exit(-1);
+            }
+		}
 		return null;
 	}
 }
@@ -319,6 +326,11 @@ const getETRegisters = async (address) => {
 	} catch (e) {
 		if (options.debug) {
 			console.error("getETRegisters: " + e.message);
+		}
+		if(e.errno) {
+            if(networkErrors.includes(e.errno)) {
+                process.exit(-1);
+            }
 		}
 		return null;
 	}
@@ -371,6 +383,11 @@ async function getDTSN (address) {
 		if (options.debug) {
 			console.error("getDTSN: " + e.message);
 		}
+		if(e.errno) {
+            if(networkErrors.includes(e.errno)) {
+                process.exit(-1);
+            }
+		}
 		return null;
 	}
 }
@@ -390,6 +407,11 @@ async function getDTRegisters (address) {
 	} catch (e) {
 		if (options.debug) {
 			console.error("getDTRegisters: " + e.message);
+		}
+		if(e.errno) {
+            if(networkErrors.includes(e.errno)) {
+                process.exit(-1);
+            }
 		}
 		return null;
 	}
