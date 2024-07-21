@@ -237,6 +237,21 @@ const ETPayloadParser_891c = new Parser()
 	.uint32be('DiagStatusL')
 	;
 
+const ETPayloadParser_89e8 = new Parser()
+	.uint16be('PV5Voltage', { formatter: (x) => { return x / 10.0; } })
+	.uint16be('PV5Current', { formatter: (x) => { return x / 10.0; } })
+	.uint32be('PV6Power')
+	.uint16be('PV6Voltage', { formatter: (x) => { return x / 10.0; } })
+	.seek((35336 - 35308) * 2)
+	.uint16be('MPPT1Power', { formatter: (x) => { return x / 10.0; } })
+	.uint16be('MPPT2Power', { formatter: (x) => { return x / 10.0; } })
+	.uint16be('MPPT3Power', { formatter: (x) => { return x / 10.0; } })
+	.seek((35344 - 35340) * 2)
+	.uint16be('MPPT1Current', { formatter: (x) => { return x / 10.0; } })
+	.uint16be('MPPT2Current', { formatter: (x) => { return x / 10.0; } })
+	.uint16be('MPPT3Current', { formatter: (x) => { return x / 10.0; } })
+;
+
 const ETPayloadParser_8ca0 = new Parser()
 	.uint16be('COMMode')
 	.uint16be('RSSI')
@@ -314,10 +329,12 @@ const getETRegisters = async (address) => {
 		var gwState_891c = ETPayloadParser_891c.parse(vals.buffer);
 		vals = await modbusClient.readHoldingRegisters(0x9088, 48);
 		var gwState_9088 = ETPayloadParser_9088.parse(vals.buffer);
+		vals = await modbusClient.readHoldingRegisters(0x89e8, 44);
+		var gwState_89e8 = ETPayloadParser_89e8.parse(vals.buffer);
 		vals = await modbusClient.readHoldingRegisters(0x8ca0, 38);
 		var gwState_8ca0 = ETPayloadParser_8ca0.parse(vals.buffer);
 		var gwState = {};
-		Object.assign(gwState, gwState_891c, gwState_8ca0, gwState_9088);
+		Object.assign(gwState, gwState_891c, gwState_8ca0, gwState_89e8, gwState_9088);
 		await sendMqtt(GWSerialNumber[address], gwState);
 		if (options.debug) {
 			console.log(util.inspect(gwState));
