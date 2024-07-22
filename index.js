@@ -335,6 +335,12 @@ const getETRegisters = async (address) => {
 		var gwState_8ca0 = ETPayloadParser_8ca0.parse(vals.buffer);
 		var gwState = {};
 		Object.assign(gwState, gwState_891c, gwState_8ca0, gwState_89e8, gwState_9088);
+		gwState.PV1Power = parseInt(gwState.PV1Voltage * gwState.PV1Current);
+		gwState.PV2Power = parseInt(gwState.PV2Voltage * gwState.PV2Current);
+		gwState.PV3Power = parseInt(gwState.PV3Voltage * gwState.PV3Current);
+		gwState.PV4Power = parseInt(gwState.PV4Voltage * gwState.PV4Current);
+		gwState.PV5Power = parseInt(gwState.PV5Voltage * gwState.PV5Current);
+		gwState.PV6Power = parseInt(gwState.PV6Voltage * gwState.PV6Current);
 		await sendMqtt(GWSerialNumber[address], gwState);
 		if (options.debug) {
 			console.log(util.inspect(gwState));
