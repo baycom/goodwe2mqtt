@@ -5,7 +5,7 @@ const ModbusRTU = require("modbus-serial");
 const Parser = require('binary-parser').Parser;
 const commandLineArgs = require('command-line-args')
 
-const networkErrors = ["ESOCKETTIMEDOUT", "ETIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EHOSTUNREACH"];
+const networkErrors = ["ESOCKETTIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EHOSTUNREACH"];
 
 const optionDefinitions = [
 	{ name: 'mqtthost', alias: 'm', type: String, defaultValue: "localhost" },
