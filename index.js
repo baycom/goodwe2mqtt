@@ -26,6 +26,8 @@ var mutex = new Mutex();
 
 modbusClient.setTimeout(1000);
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 if (options.inverterhost) {
 	modbusClient.connectTcpRTUBuffered(options.inverterhost, { port: 502 }).then(val => {
 		// start get value
@@ -464,9 +466,12 @@ const DTPayloadParser = new Parser()
 async function getDTRegisters (address) {
 	try {
 		modbusClient.setID(address);
-		let vals = await modbusClient.readHoldingRegisters(0x200, 8);
-		var SNStr = new String(vals.buffer);
-		GWSerialNumber[address] = SNStr;
+		if( GWSerialNumber[address] === undefined) {
+			let vals = await modbusClient.readHoldingRegisters(0x200, 8);
+			var SNStr = new String(vals.buffer);
+			GWSerialNumber[address] = SNStr;
+		}
+		await sleep(50);
 		vals = await modbusClient.readHoldingRegisters(0x300, 0x21);
 		var gwState = DTPayloadParser.parse(vals.buffer);
 		gwState.PV1Power = parseInt(gwState.PV1Voltage * gwState.PV1Current);
@@ -489,7 +494,6 @@ async function getDTRegisters (address) {
 	}
 }
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function getStatus() {
 	try {
