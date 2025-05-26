@@ -379,24 +379,41 @@ const ETPayloadParser_45222 = new Parser()
 const getETRegisters = async (address) => {
 	try {
 		modbusClient.setID(address);
+		if(options.debug) {
+			console.log("35001");
+		}
                 let vals = await modbusClient.readHoldingRegisters(35001, 40);
                 var gwState_35001 = ETPayloadParser_35001.parse(vals.buffer);
-
+                if(options.debug) {
+			console.log("35100");
+		}
 		vals = await modbusClient.readHoldingRegisters(35100, 123);
 		var gwState_35100 = ETPayloadParser_35100.parse(vals.buffer);
-
+		if(options.debug) {
+			console.log("35304");
+		}
 		vals = await modbusClient.readHoldingRegisters(35304, 44);
 		var gwState_35304 = ETPayloadParser_35304.parse(vals.buffer);
-
+		if(options.debug) {
+			console.log("36003");
+		}
 		vals = await modbusClient.readHoldingRegisters(36003, 65);
 		var gwState_36003 = ETPayloadParser_36003.parse(vals.buffer);
-
-		vals = await modbusClient.readHoldingRegisters(36092, 35);
-		var gwState_36092 = ETPayloadParser_36092.parse(vals.buffer);
-
+		if(gwState_35001.RatePower >= 15000) {
+			if(options.debug) {
+				console.log("36092");
+			}
+			vals = await modbusClient.readHoldingRegisters(36092, 35);
+			var gwState_36092 = ETPayloadParser_36092.parse(vals.buffer);
+		}
+		if(options.debug) {
+			console.log("37000");
+		}
 		vals = await modbusClient.readHoldingRegisters(37000, 48);
 		var gwState_37000 = ETPayloadParser_37000.parse(vals.buffer);
-
+		if(options.debug) {
+			console.log("45222");
+		}
 		vals = await modbusClient.readHoldingRegisters(45222, 22);
 		var gwState_45222 = ETPayloadParser_45222.parse(vals.buffer);
 
