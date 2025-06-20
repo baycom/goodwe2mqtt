@@ -5,7 +5,7 @@ const ModbusRTU = require("modbus-serial");
 const Parser = require('binary-parser').Parser;
 const commandLineArgs = require('command-line-args')
 
-const networkErrors = ["ESOCKETTIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EHOSTUNREACH"];
+const networkErrors = ["ESOCKETTIMEDOUT", "ECONNRESET", "ECONNREFUSED", "EHOSTUNREACH", "ETIMEDOUT"];
 
 const optionDefinitions = [
 	{ name: 'mqtthost', alias: 'm', type: String, defaultValue: "localhost" },
@@ -387,33 +387,39 @@ const getETRegisters = async (address) => {
                 if(options.debug) {
 			console.log("35100");
 		}
+		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(35100, 123);
 		var gwState_35100 = ETPayloadParser_35100.parse(vals.buffer);
 		if(options.debug) {
 			console.log("35304");
 		}
+		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(35304, 44);
 		var gwState_35304 = ETPayloadParser_35304.parse(vals.buffer);
 		if(options.debug) {
 			console.log("36003");
 		}
+		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(36003, 65);
 		var gwState_36003 = ETPayloadParser_36003.parse(vals.buffer);
 		if(gwState_35001.RatePower >= 15000) {
 			if(options.debug) {
 				console.log("36092");
 			}
+			await sleep(100);
 			vals = await modbusClient.readHoldingRegisters(36092, 35);
 			var gwState_36092 = ETPayloadParser_36092.parse(vals.buffer);
 		}
 		if(options.debug) {
 			console.log("37000");
 		}
+		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(37000, 48);
 		var gwState_37000 = ETPayloadParser_37000.parse(vals.buffer);
 		if(options.debug) {
 			console.log("45222");
 		}
+		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(45222, 22);
 		var gwState_45222 = ETPayloadParser_45222.parse(vals.buffer);
 
@@ -436,7 +442,7 @@ const getETRegisters = async (address) => {
 		return gwState;
 	} catch (e) {
 		if (options.debug) {
-			console.error("getETRegisters: " + e.message);
+			console.error("getETRegisters: ", e.message, " errno: ", e.errno);
 		}
 		if(e.errno) {
             if(networkErrors.includes(e.errno)) {
