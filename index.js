@@ -359,7 +359,32 @@ const ETPayloadParser_37000 = new Parser()
 	.uint16be('MinimumCellVoltage', { formatter: (x) => { return x / 1000.0; } })
 	;
 
-const ETPayloadParser_45222 = new Parser()
+	const ETPayloadParser_39000 = new Parser()
+	.uint16be('BMS2Status')
+	.uint16be('BMS2PackTemperature', { formatter: (x) => { return x / 10.0; } })
+	.uint16be('BMS2ChargeImax')
+	.uint16be('BMS2DischargeImax')
+	.uint16be('BMS2ErrorCodeL')
+	.uint16be('BMS2SOC')
+	.uint16be('BMS2SOH')
+	.uint16be('BMS2BatteryStrings')
+	.uint16be('BMS2WarningCodeL')
+	.uint16be('Battery2Protocol')
+	.uint16be('BMS2ErrorCodeH')
+	.uint16be('BMS2WarningCodeH')
+	.uint16be('BMS2SoftwareVersion')
+	.uint16be('Battery2HardwareVersion')
+	.uint16be('BMS2MaximumCellTemperatureID')
+	.uint16be('BMS2MinimumCellTemperatureID')
+	.uint16be('BMS2MaximumCellVoltageID')
+	.uint16be('BMS2MinimumCellVoltageID')
+	.uint16be('BMS2MaximumCellTemperature', { formatter: (x) => { return x / 10.0; } })
+	.uint16be('BMS2MinimumCellTemperature', { formatter: (x) => { return x / 10.0; } })
+	.uint16be('BMS2MaximumCellVoltage', { formatter: (x) => { return x / 1000.0; } })
+	.uint16be('BMS2MinimumCellVoltage', { formatter: (x) => { return x / 1000.0; } })
+	;
+
+	const ETPayloadParser_45222 = new Parser()
 	.uint32be('TotalPVGeneration', { formatter: (x) => { return x / 10.0; } })
 	.uint32be('TodayPVGeneration', { formatter: (x) => { return x / 10.0; } })
 	.uint32be('ETotalSell', { formatter: (x) => { return x / 10.0; } })
@@ -375,6 +400,10 @@ const ETPayloadParser_45222 = new Parser()
 	.uint16be('EDischargeDay', { formatter: (x) => { return x / 10.0; } })
 	;
 
+	const ETPayloadParser_47924 = new Parser()
+	.uint16be('Battery2Voltage', { formatter: (x) => { return x / 10.0; } })
+	.int16be('Battery2Current', { formatter: (x) => { return x / 10.0; } })
+	;
 
 const getETRegisters = async (address) => {
 	try {
@@ -417,14 +446,28 @@ const getETRegisters = async (address) => {
 		vals = await modbusClient.readHoldingRegisters(37000, 48);
 		var gwState_37000 = ETPayloadParser_37000.parse(vals.buffer);
 		if(options.debug) {
+			console.log("39000");
+		}
+		await sleep(100);
+		vals = await modbusClient.readHoldingRegisters(39000, 48);
+		var gwState_39000 = ETPayloadParser_39000.parse(vals.buffer);
+
+		if(options.debug) {
 			console.log("45222");
 		}
 		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(45222, 22);
 		var gwState_45222 = ETPayloadParser_45222.parse(vals.buffer);
 
+		if(options.debug) {
+			console.log("47924");
+		}
+		await sleep(100);
+		vals = await modbusClient.readHoldingRegisters(47924, 4);
+		var gwState_47924 = ETPayloadParser_47924.parse(vals.buffer);
+
 		var gwState = {};
-		Object.assign(gwState, gwState_35100, gwState_36003, gwState_36092, gwState_35304, gwState_37000, gwState_45222);
+		Object.assign(gwState, gwState_35100, gwState_36003, gwState_36092, gwState_35304, gwState_37000, gwState_39000, gwState_45222, gwState_47924);
 
 		gwState.PV1Power = parseInt(gwState.PV1Voltage * gwState.PV1Current);
 		gwState.PV2Power = parseInt(gwState.PV2Voltage * gwState.PV2Current);
