@@ -128,7 +128,7 @@ MQTTclient.on('message', function (topic, message, packet) {
 		let serial = sub[1];
 		let func = sub[2];
 		let value = parseInt(message);
-		let query = message.length==0
+		let query = message.length == 0
 		let register = -1;
 		if (func === 'socminongrid') {
 			register = 45356;
@@ -143,7 +143,7 @@ MQTTclient.on('message', function (topic, message, packet) {
 		} else if (func === 'rapaidcutoff') {
 			register = 45255;
 		}
-		if(register != -1) {
+		if (register != -1) {
 			modbusWrite(serial, func, register, value, query);
 		}
 	}
@@ -152,8 +152,8 @@ MQTTclient.on('message', function (topic, message, packet) {
 const ETPayloadParser_35001 = new Parser()
 	.uint16('RatePower')
 	.seek(2)
-	.string('INVSN', {length: 16})
-	.string('ModelName', {length: 10})
+	.string('INVSN', { length: 16 })
+	.string('ModelName', { length: 10 })
 	.uint16('FMVersionDSPM')
 	.uint16('FMVersionDSPS')
 	.uint16('BetaVersionDSP')
@@ -169,17 +169,17 @@ const ETPayloadParser_35001 = new Parser()
 
 const ETPayloadParser_35100 = new Parser()
 	.seek((35103 - 35100) * 2)
-	.uint16be('PV1Voltage', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
-	.uint16be('PV1Current', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
+	.uint16be('PV1Voltage', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
+	.uint16be('PV1Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
 	.uint32be('PV1Power')
-	.uint16be('PV2Voltage', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
-	.uint16be('PV2Current', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
+	.uint16be('PV2Voltage', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
+	.uint16be('PV2Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
 	.uint32be('PV2Power')
-	.uint16be('PV3Voltage', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
-	.uint16be('PV3Current', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
+	.uint16be('PV3Voltage', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
+	.uint16be('PV3Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
 	.uint32be('PV3Power')
-	.uint16be('PV4Voltage', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
-	.uint16be('PV4Current', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
+	.uint16be('PV4Voltage', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
+	.uint16be('PV4Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
 	.uint32be('PV4Power')
 	.uint32be('PVWorkMode')
 	.uint16be('OnGridL1Voltage', { formatter: (x) => { return x / 10.0; } })
@@ -228,8 +228,7 @@ const ETPayloadParser_35100 = new Parser()
 	.uint16be('NBUSVoltage', { formatter: (x) => { return x / 10.0; } })
 	.uint16be('BatteryVoltage', { formatter: (x) => { return x / 10.0; } })
 	.int16be('BatteryCurrent', { formatter: (x) => { return x / 10.0; } })
-	.seek(2)
-	.int16be('BatteryPower')
+	.int32be('BatteryPower')
 	.uint16be('BatteryMode')
 	.uint16be('WarningCode')
 	.uint16be('CountryCode')
@@ -259,21 +258,21 @@ const ETPayloadParser_35100 = new Parser()
 	;
 
 const ETPayloadParser_35304 = new Parser()
-	.uint16be('PV5Voltage', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
-	.uint16be('PV5Current', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
-	.uint16be('PV6Voltage', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
-	.uint16be('PV6Current', { formatter: (x) => { return x!=65535?(x/10.0):0; } })
+	.uint16be('PV5Voltage', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
+	.uint16be('PV5Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
+	.uint16be('PV6Voltage', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
+	.uint16be('PV6Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : 0; } })
 	.seek((35336 - 35307) * 2)
-	.uint16be('MPPT1Power', { formatter: (x) => { return x!=65535?x:-1; } })
-	.uint16be('MPPT2Power', { formatter: (x) => { return x!=65535?x:-1; } })
-	.uint16be('MPPT3Power', { formatter: (x) => { return x!=65535?x:-1; } })
+	.uint16be('MPPT1Power', { formatter: (x) => { return x != 65535 ? x : -1; } })
+	.uint16be('MPPT2Power', { formatter: (x) => { return x != 65535 ? x : -1; } })
+	.uint16be('MPPT3Power', { formatter: (x) => { return x != 65535 ? x : -1; } })
 	.seek((35344 - 35339) * 2)
-	.uint16be('MPPT1Current', { formatter: (x) => { return x!=65535?(x/10.0):-1; } })
-	.uint16be('MPPT2Current', { formatter: (x) => { return x!=65535?(x/10.0):-1; } })
-	.uint16be('MPPT3Current', { formatter: (x) => { return x!=65535?(x/10.0):-1; } })
-;
+	.uint16be('MPPT1Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : -1; } })
+	.uint16be('MPPT2Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : -1; } })
+	.uint16be('MPPT3Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : -1; } })
+	;
 
-	const ETPayloadParser_36003 = new Parser()
+const ETPayloadParser_36003 = new Parser()
 	.uint16be('bMeterConnectStatus')
 	.uint16be('MeterCommunicationStatus')
 	.int16be('MTActivePowerL1')
@@ -318,7 +317,7 @@ const ETPayloadParser_35304 = new Parser()
 	.uint16be('ARCSoftwareVersion')
 	;
 
-	const ETPayloadParser_36092 = new Parser()
+const ETPayloadParser_36092 = new Parser()
 	.uint64be('ActiveEtotalSellL1', { formatter: (x) => { return parseFloat(x) / 100.0; } })
 	.uint64be('ActiveEtotalSellL2', { formatter: (x) => { return parseFloat(x) / 100.0; } })
 	.uint64be('ActiveEtotalSellL3', { formatter: (x) => { return parseFloat(x) / 100.0; } })
@@ -359,7 +358,7 @@ const ETPayloadParser_37000 = new Parser()
 	.uint16be('MinimumCellVoltage', { formatter: (x) => { return x / 1000.0; } })
 	;
 
-	const ETPayloadParser_39000 = new Parser()
+const ETPayloadParser_39000 = new Parser()
 	.uint16be('BMS2Status')
 	.uint16be('BMS2PackTemperature', { formatter: (x) => { return x / 10.0; } })
 	.uint16be('BMS2ChargeImax')
@@ -384,7 +383,7 @@ const ETPayloadParser_37000 = new Parser()
 	.uint16be('BMS2MinimumCellVoltage', { formatter: (x) => { return x / 1000.0; } })
 	;
 
-	const ETPayloadParser_45222 = new Parser()
+const ETPayloadParser_45222 = new Parser()
 	.uint32be('TotalPVGeneration', { formatter: (x) => { return x / 10.0; } })
 	.uint32be('TodayPVGeneration', { formatter: (x) => { return x / 10.0; } })
 	.uint32be('ETotalSell', { formatter: (x) => { return x / 10.0; } })
@@ -400,74 +399,76 @@ const ETPayloadParser_37000 = new Parser()
 	.uint16be('EDischargeDay', { formatter: (x) => { return x / 10.0; } })
 	;
 
-	const ETPayloadParser_47924 = new Parser()
-	.uint16be('Battery2Voltage', { formatter: (x) => { return x / 10.0; } })
-	.int16be('Battery2Current', { formatter: (x) => { return x / 10.0; } })
-	;
+const ETPayloadParser_35262 = new Parser()
+.uint16be('Battery2Voltage', { formatter: (x) => { return x / 10.0; } })
+.int16be('Battery2Current', { formatter: (x) => { return x / 10.0; } })
+.int32be('Battery2Power')
+.uint16be('Battery2Mode')
+;
 
 const getETRegisters = async (address) => {
 	try {
 		modbusClient.setID(address);
-		if(options.debug) {
+		if (options.debug) {
 			console.log("35001");
 		}
-                let vals = await modbusClient.readHoldingRegisters(35001, 40);
-                var gwState_35001 = ETPayloadParser_35001.parse(vals.buffer);
-                if(options.debug) {
+		let vals = await modbusClient.readHoldingRegisters(35001, 40);
+		var gwState_35001 = ETPayloadParser_35001.parse(vals.buffer);
+		if (options.debug) {
 			console.log("35100");
 		}
 		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(35100, 123);
 		var gwState_35100 = ETPayloadParser_35100.parse(vals.buffer);
-		if(options.debug) {
+		if (options.debug) {
 			console.log("35304");
 		}
 		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(35304, 44);
 		var gwState_35304 = ETPayloadParser_35304.parse(vals.buffer);
-		if(options.debug) {
+		if (options.debug) {
 			console.log("36003");
 		}
 		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(36003, 65);
 		var gwState_36003 = ETPayloadParser_36003.parse(vals.buffer);
-		if(gwState_35001.RatePower >= 15000) {
-			if(options.debug) {
+		if (gwState_35001.RatePower >= 15000) {
+			if (options.debug) {
 				console.log("36092");
 			}
 			await sleep(100);
 			vals = await modbusClient.readHoldingRegisters(36092, 35);
 			var gwState_36092 = ETPayloadParser_36092.parse(vals.buffer);
 		}
-		if(options.debug) {
+		if (options.debug) {
 			console.log("37000");
 		}
 		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(37000, 48);
 		var gwState_37000 = ETPayloadParser_37000.parse(vals.buffer);
-		if(options.debug) {
+		if (options.debug) {
 			console.log("39000");
 		}
 		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(39000, 48);
 		var gwState_39000 = ETPayloadParser_39000.parse(vals.buffer);
 
-		if(options.debug) {
+		if (options.debug) {
 			console.log("45222");
 		}
 		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(45222, 22);
 		var gwState_45222 = ETPayloadParser_45222.parse(vals.buffer);
 
-		if(options.debug) {
+		if (options.debug) {
 			console.log("47924");
 		}
 		await sleep(100);
-		vals = await modbusClient.readHoldingRegisters(47924, 4);
-		var gwState_47924 = ETPayloadParser_47924.parse(vals.buffer);
+		vals = await modbusClient.readHoldingRegisters(35262, 6);
+		var gwState_35262 = ETPayloadParser_35262.parse(vals.buffer);
 
 		var gwState = {};
-		Object.assign(gwState, gwState_35100, gwState_36003, gwState_36092, gwState_35304, gwState_37000, gwState_39000, gwState_45222, gwState_47924);
+		Object.assign(gwState, gwState_35100, gwState_35262, gwState_35304, gwState_36003, gwState_36092, gwState_37000, gwState_39000, gwState_45222);
 
 		gwState.PV1Power = parseInt(gwState.PV1Voltage * gwState.PV1Current);
 		gwState.PV2Power = parseInt(gwState.PV2Voltage * gwState.PV2Current);
@@ -487,10 +488,10 @@ const getETRegisters = async (address) => {
 		if (options.debug) {
 			console.error("getETRegisters: ", e.message, " errno: ", e.errno);
 		}
-		if(e.errno) {
-            if(networkErrors.includes(e.errno)) {
-                process.exit(-1);
-            }
+		if (e.errno) {
+			if (networkErrors.includes(e.errno)) {
+				process.exit(-1);
+			}
 		}
 		return null;
 	}
@@ -529,10 +530,10 @@ const DTPayloadParser = new Parser()
 	.uint16be('EDay', { formatter: (x) => { return x / 10.0; } })
 	;
 
-async function getDTRegisters (address) {
+async function getDTRegisters(address) {
 	try {
 		modbusClient.setID(address);
-		if( GWSerialNumber[address] === undefined) {
+		if (GWSerialNumber[address] === undefined) {
 			let vals = await modbusClient.readHoldingRegisters(0x200, 8);
 			var SNStr = new String(vals.buffer);
 			GWSerialNumber[address] = SNStr;
@@ -551,10 +552,10 @@ async function getDTRegisters (address) {
 		if (options.debug) {
 			console.error("getDTRegisters: " + e.message);
 		}
-		if(e.errno) {
-            if(networkErrors.includes(e.errno)) {
-                process.exit(-1);
-            }
+		if (e.errno) {
+			if (networkErrors.includes(e.errno)) {
+				process.exit(-1);
+			}
 		}
 		return null;
 	}
