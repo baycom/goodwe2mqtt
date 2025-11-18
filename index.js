@@ -439,6 +439,13 @@ const getETRegisters = async (address) => {
 			await sleep(100);
 			vals = await modbusClient.readHoldingRegisters(36092, 35);
 			var gwState_36092 = ETPayloadParser_36092.parse(vals.buffer);
+
+			if (options.debug) {
+				console.log("39000");
+			}
+			await sleep(100);
+			vals = await modbusClient.readHoldingRegisters(39000, 48);
+			var gwState_39000 = ETPayloadParser_39000.parse(vals.buffer);
 		}
 		if (options.debug) {
 			console.log("37000");
@@ -446,12 +453,6 @@ const getETRegisters = async (address) => {
 		await sleep(100);
 		vals = await modbusClient.readHoldingRegisters(37000, 48);
 		var gwState_37000 = ETPayloadParser_37000.parse(vals.buffer);
-		if (options.debug) {
-			console.log("39000");
-		}
-		await sleep(100);
-		vals = await modbusClient.readHoldingRegisters(39000, 48);
-		var gwState_39000 = ETPayloadParser_39000.parse(vals.buffer);
 
 		if (options.debug) {
 			console.log("45222");
