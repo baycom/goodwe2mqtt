@@ -16,6 +16,7 @@ const optionDefinitions = [
 	{ name: 'address', alias: 'a', type: Number, multiple: true, defaultValue: [1] },
 	{ name: 'wait', alias: 'w', type: Number, defaultValue: 10000 },
 	{ name: 'debug', alias: 'd', type: Boolean, defaultValue: false },
+	{ name: 'na', alias: 'n', type: String, defaultValue: ['NA/0/state'] }
 ];
 
 const options = commandLineArgs(optionDefinitions)
@@ -50,6 +51,7 @@ console.log("MQTT Host         : " + options.mqtthost);
 
 console.log("GoodWe MODBUS addr: " + options.address);
 console.log("GoodWe Type       : " + options.type);
+console.log("NA                : " + options.na);
 
 if (options.inverterhost) {
 	console.log("GoodWe host       : " + options.inverterhost);
@@ -61,6 +63,9 @@ var MQTTclient = mqtt.connect("mqtt://" + options.mqtthost);
 MQTTclient.on("connect", function () {
 	console.log("MQTT connected");
 	MQTTclient.subscribe("GoodWe/+/+/set");
+	if (options.na) {
+		MQTTclient.subscribe(options.na);
+	}
 })
 
 MQTTclient.on("error", function (error) {
@@ -81,7 +86,7 @@ function findModbusAddr(serial) {
 		if (options.debug) {
 			console.log("query: " + address + " type: " + options.type[pos]);
 		}
-		if (options.type[pos] == 'ET' && GWSerialNumber[address] == serial) {
+		if (GWSerialNumber[address] == serial) {
 			if (options.debug) {
 				console.log("found modbus address: ", address);
 			}
@@ -93,6 +98,26 @@ function findModbusAddr(serial) {
 		console.log("modbus address not found for serial:", serial);
 	}
 	return -1;
+}
+
+function findType(serial) {
+	var pos = 0;
+	for (let address of options.address) {
+		if (options.debug) {
+			console.log("query: " + address + " type: " + options.type[pos]);
+		}
+		if (GWSerialNumber[address] == serial) {
+			if (options.debug) {
+				console.log("found modbus address: ", address);
+			}
+			return options.type[pos];
+		}
+		pos++;
+	}
+	if (options.debug) {
+		console.log("modbus address not found for serial:", serial);
+	}
+	return undefined;
 }
 
 async function modbusWrite(serial, func, reg, value, query = 0) {
@@ -130,21 +155,57 @@ MQTTclient.on('message', function (topic, message, packet) {
 		let value = parseInt(message);
 		let query = message.length == 0
 		let register = -1;
-		if (func === 'socminongrid') {
-			register = 45356;
-		} else if (func === 'socminoffgrid') {
-			register = 45358;
-		} else if (func === 'chargeforcegrid') {
-			register = 47545;
-		} else if (func === 'chargeforcesoc') {
-			register = 47546;
-		} else if (func === 'chargeforcepower') {
-			register = 47603;
-		} else if (func === 'rapaidcutoff') {
-			register = 45255;
+		let type = findType(serial);
+		
+		if(type === 'ET') {
+			if (func === 'socminongrid') {
+				register = 45356;
+			} else if (func === 'socminoffgrid') {
+				register = 45358;
+			} else if (func === 'chargeforcegrid') {
+				register = 47545;
+			} else if (func === 'chargeforcesoc') {
+				register = 47546;
+			} else if (func === 'chargeforcepower') {
+				register = 47603;
+			} else if (func === 'rapidcutoff') {
+				register = 45255;
+			}
+		} else if(type === 'DT') {
+			if (func === 'rapidcutoff') {
+				if(value == 0) {
+					modbusWrite(GWSerialNumber[address], 'rapidcutoff', 120, 0);
+				} else {
+					modbusWrite(GWSerialNumber[address], 'rapidcutoff', 121, 0);
+				}	
+			}
 		}
 		if (register != -1) {
 			modbusWrite(serial, func, register, value, query);
+		}
+	} else if ((index = options.na.indexOf(topic)) >= 0) {
+		let val = JSON.parse(message);
+		if (options.debug) {
+			console.log("NA: ", options.na, " state: ", val);
+		}
+		var pos = 0;
+		for (let address of options.address) {
+			if (options.debug) {
+				console.log("query: " + address + " type: " + options.type[pos]);
+			}
+			if (options.type[pos] == 'ET') {
+				if (options.debug) {
+					console.log("found modbus address: ", address);
+				}
+				modbusWrite(GWSerialNumber[address], 'rapidcutoff', 45255, val == 0 ? 1 : 0);
+			} else {
+				if(val == 0) {
+					modbusWrite(GWSerialNumber[address], 'rapidcutoff', 120, 0);
+				} else {
+					modbusWrite(GWSerialNumber[address], 'rapidcutoff', 121, 0);
+				}
+			}
+			pos++;
 		}
 	}
 });
@@ -400,11 +461,11 @@ const ETPayloadParser_45222 = new Parser()
 	;
 
 const ETPayloadParser_35262 = new Parser()
-.uint16be('Battery2Voltage', { formatter: (x) => { return x / 10.0; } })
-.int16be('Battery2Current', { formatter: (x) => { return x / 10.0; } })
-.int32be('Battery2Power')
-.uint16be('Battery2Mode')
-;
+	.uint16be('Battery2Voltage', { formatter: (x) => { return x / 10.0; } })
+	.int16be('Battery2Current', { formatter: (x) => { return x / 10.0; } })
+	.int32be('Battery2Power')
+	.uint16be('Battery2Mode')
+	;
 
 const getETRegisters = async (address) => {
 	try {
