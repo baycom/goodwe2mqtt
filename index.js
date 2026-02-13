@@ -605,9 +605,11 @@ async function getDTRegisters(address) {
 		var gwState = DTPayloadParser.parse(vals.buffer);
 		gwState.PV1Power = parseInt(gwState.PV1Voltage * gwState.PV1Current);
 		gwState.PV2Power = parseInt(gwState.PV2Voltage * gwState.PV2Current);
-		await sendMqtt(GWSerialNumber[address], gwState);
-		if (options.debug) {
-			console.log(util.inspect(gwState));
+		if(gwState.PV1Voltage < 1200 && gwState.PV2Voltage < 1200 && gwState.PV1Current < 120 && gwState.PV2Current < 120 ) {
+			await sendMqtt(GWSerialNumber[address], gwState);
+			if (options.debug) {
+				console.log(util.inspect(gwState));
+			}
 		}
 		return gwState;
 	} catch (e) {
