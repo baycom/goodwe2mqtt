@@ -197,7 +197,7 @@ MQTTclient.on('message', function (topic, message, packet) {
 				if (options.debug) {
 					console.log("found modbus address: ", address);
 				}
-				modbusWrite(GWSerialNumber[address], 'rapidcutoff', 45255, val == 0 ? 1 : 0);
+				modbusWrite(GWSerialNumber[address], 'rapidcutoff', 45255, val);
 			} else {
 				if(val == 0) {
 					modbusWrite(GWSerialNumber[address], 'rapidcutoff', 120, 0);
