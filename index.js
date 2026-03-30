@@ -331,6 +331,8 @@ const ETPayloadParser_35304 = new Parser()
 	.uint16be('MPPT1Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : -1; } })
 	.uint16be('MPPT2Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : -1; } })
 	.uint16be('MPPT3Current', { formatter: (x) => { return x != 65535 ? (x / 10.0) : -1; } })
+	.seek((35364 - 35347) * 2)
+	.uint16be('RISO', { formatter: (x) => { return x != 65535 ? (x / 10.0) : -1; } })
 	;
 
 const ETPayloadParser_36003 = new Parser()
@@ -485,7 +487,7 @@ const getETRegisters = async (address) => {
 			console.log("35304");
 		}
 		await sleep(100);
-		vals = await modbusClient.readHoldingRegisters(35304, 44);
+		vals = await modbusClient.readHoldingRegisters(35304, 63);
 		var gwState_35304 = ETPayloadParser_35304.parse(vals.buffer);
 		if (options.debug) {
 			console.log("36003");
